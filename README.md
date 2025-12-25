@@ -4,7 +4,7 @@ A lightweight, single-page web application that generates AI images instantly us
 
 ![Project Demo](preview.png)
 
-*(Note: You can replace this link with a screenshot of your actual tool later)*
+ 
 
 ## 🚀 Features
 - **Free & Unlimited:** leverages the open-source Pollinations API.

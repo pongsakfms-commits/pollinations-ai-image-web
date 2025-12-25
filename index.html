@@ -7,7 +7,6 @@
     <meta name="description" content="Free AI Image Generator using Pollinations API">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom smooth transition */
         .fade-in { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -30,15 +29,22 @@
                        placeholder="e.g., A golden retriever astronaut on the moon, 4k, realistic" 
                        class="w-full border border-slate-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm">
             </div>
+
+            <div class="flex items-center gap-3 bg-slate-100 p-3 rounded-xl border border-slate-200">
+                <span class="text-sm font-semibold text-slate-600">Human Check:</span>
+                <span id="mathQuestion" class="font-bold text-indigo-600 text-lg"></span>
+                <span class="text-slate-500">=</span>
+                <input type="number" id="mathAnswer" placeholder="?" 
+                       class="w-20 border border-slate-300 p-2 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
             
-            <button onclick="generateImage()" 
+            <button onclick="checkCaptchaAndGenerate()" 
                     class="w-full bg-indigo-600 text-white py-3 px-4 rounded-xl hover:bg-indigo-700 transition duration-200 font-semibold shadow-md flex justify-center items-center gap-2">
                 <span>🚀 Generate Artwork</span>
             </button>
         </div>
 
         <div class="mt-8 min-h-[300px] flex items-center justify-center bg-slate-100 rounded-xl border border-dashed border-slate-300 relative overflow-hidden group">
-            
             <p id="placeholderText" class="text-slate-400 text-sm">Image will appear here...</p>
             
             <div id="loading" class="hidden absolute flex flex-col items-center animate-pulse">
@@ -66,6 +72,34 @@
     </footer>
 
     <script>
+        // CAPTCHA Variables
+        let num1, num2, correctAnswer;
+
+        // Function to generate a new math question
+        function generateMathQuestion() {
+            num1 = Math.floor(Math.random() * 10) + 1; // 1-10
+            num2 = Math.floor(Math.random() * 10) + 1; // 1-10
+            correctAnswer = num1 + num2;
+            document.getElementById('mathQuestion').innerText = `${num1} + ${num2}`;
+            document.getElementById('mathAnswer').value = ''; // Clear answer
+        }
+
+        // Initialize question on load
+        window.onload = generateMathQuestion;
+
+        function checkCaptchaAndGenerate() {
+            const userAnswer = parseInt(document.getElementById('mathAnswer').value);
+
+            if (isNaN(userAnswer) || userAnswer !== correctAnswer) {
+                alert("🚫 Incorrect math answer. Please try again to prove you are human.");
+                generateMathQuestion(); // Reset question on failure
+                return;
+            }
+
+            // If correct, proceed to generate image
+            generateImage();
+        }
+
         function generateImage() {
             const promptInput = document.getElementById('promptInput');
             const prompt = promptInput.value.trim();
@@ -75,35 +109,31 @@
                 return;
             }
 
-            // UI References
             const img = document.getElementById('resultImage');
             const loader = document.getElementById('loading');
             const placeholder = document.getElementById('placeholderText');
             const actionArea = document.getElementById('actionArea');
             const downloadBtn = document.getElementById('downloadLink');
             
-            // Set Loading State
             placeholder.classList.add('hidden');
             img.classList.add('hidden');
             actionArea.classList.add('hidden');
             loader.classList.remove('hidden');
 
-            // Construct API URL
-            // Adding a random seed ensures a new image is generated even if the prompt is the same
             const seed = Math.floor(Math.random() * 999999);
             const encodedPrompt = encodeURIComponent(prompt);
             const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true`;
 
-            // Load Image
             img.src = imageUrl;
 
             img.onload = () => {
                 loader.classList.add('hidden');
                 img.classList.remove('hidden');
                 actionArea.classList.remove('hidden');
-                
-                // Update Download Link
                 downloadBtn.href = imageUrl;
+                
+                // Optional: Reset Captcha after success so they have to solve again (or keep it valid)
+                // generateMathQuestion(); 
             };
 
             img.onerror = () => {
@@ -114,10 +144,16 @@
             };
         }
 
-        // Allow "Enter" key to trigger generation
         document.getElementById('promptInput').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
-                generateImage();
+                checkCaptchaAndGenerate();
+            }
+        });
+        
+        // Also allow Enter key on the math input
+        document.getElementById('mathAnswer').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkCaptchaAndGenerate();
             }
         });
     </script>
